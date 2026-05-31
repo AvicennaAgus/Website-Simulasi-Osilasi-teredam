@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulasi Bandul Fisis Teredam</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap');
+
+:root {
+  --ink:    #0d1117;
+  --ink2:   #161c27;
+  --ink3:   #1e2736;
+  --ink4:   #28344a;
+  --dim:    #8a96b0;
+  --dim2:   #5a6882;
+  --fg:     #e6ecf8;
+  --fg2:    #b8c4dc;
+  --sky:    #5b9cf6;
+  --sky2:   #3a7de8;
+  --aqua:   #38d9b0;
+  --amber:  #f5a623;
+  --coral:  #e86b5f;
+  --lime:   #9be37d;
+  --pipe:   #c8a96e;
+  --mono:   'JetBrains Mono', monospace;
+  --head:   'Syne', sans-serif;
+  --body:   'Lato', sans-serif;
+  --r:      10px;
+  --r-sm:   6px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--ink);color:var(--fg);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* ── HEADER ── */
+.hdr{
+  display:flex;align-items:center;gap:16px;
+  padding:14px 28px;
+  background:var(--ink2);
+  border-bottom:1px solid rgba(255,255,255,0.07);
+  position:sticky;top:0;z-index:200;
+}
+.hdr-logo{
+  width:38px;height:38px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--sky) 0%,var(--aqua) 100%);
+  border-radius:9px;display:grid;place-items:center;font-size:19px;
+}
+.hdr-ttl{font-family:var(--head);font-size:18px;font-weight:700;letter-spacing:-0.02em}
+.hdr-sub{font-size:11px;color:var(--dim);margin-top:1px}
+.hdr-pill{
+  margin-left:auto;font-family:var(--mono);font-size:10px;
+  background:rgba(91,156,246,0.12);border:1px solid rgba(91,156,246,0.3);
+  color:var(--sky);padding:4px 12px;border-radius:99px;
+}
+
+/* ── LAYOUT ── */
+.wrap{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - 67px)}
+
+/* ── SIDEBAR ── */
+.sb{
+  background:var(--ink2);border-right:1px solid rgba(255,255,255,0.06);
+  padding:18px 14px;overflow-y:auto;max-height:calc(100vh - 67px);
+  position:sticky;top:67px;
+}
+.sb-sec{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--dim2);
+  text-transform:uppercase;margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,0.06)}
+
+/* medium cards */
+.med-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:4px}
+.med-card{
+  border-radius:var(--r-sm);border:1px solid rgba(255,255,255,0.08);
+  background:var(--ink3);padding:9px 6px 7px;text-align:center;cursor:pointer;
+  transition:all .15s;user-select:none;
+}
+.med-card:hover{border-color:rgba(255,255,255,0.18);background:var(--ink4)}
+.med-card.active{border-color:var(--sky);background:rgba(91,156,246,0.1)}
+.med-card .mi{font-size:20px;display:block;margin-bottom:3px}
+.med-card .mn{font-size:11px;font-weight:700;font-family:var(--head);color:var(--fg2)}
+.med-card.active .mn{color:var(--sky)}
+.med-card .mb{font-family:var(--mono);font-size:9px;color:var(--dim2);margin-top:2px}
+.med-card.active .mb{color:rgba(91,156,246,.6)}
+
+/* sliders */
+.sl-grp{margin-bottom:13px}
+.sl-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.sl-name{font-size:12px;color:var(--dim);font-family:var(--body)}
+.sl-val{
+  font-family:var(--mono);font-size:11px;color:var(--sky);
+  background:rgba(91,156,246,0.1);padding:2px 8px;border-radius:4px;min-width:78px;text-align:right;
+}
+.sl-hint{font-size:10px;color:var(--dim2);margin-top:1px}
+input[type=range]{
+  width:100%;appearance:none;height:3px;
+  background:var(--ink);border-radius:99px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:13px;height:13px;background:var(--sky);
+  border-radius:50%;cursor:pointer;transition:transform .1s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25)}
+
+/* buttons */
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.btn{
+  padding:7px 13px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,0.14);
+  background:var(--ink3);color:var(--fg);cursor:pointer;
+  font-family:var(--head);font-size:12px;font-weight:600;
+  transition:all .12s;display:flex;align-items:center;gap:5px;
+}
+.btn:hover{background:var(--ink4);border-color:var(--sky);color:var(--sky)}
+.btn.pri{background:var(--sky2);border-color:var(--sky2);color:#fff}
+.btn.pri:hover{opacity:.85}
+
+/* eqs box */
+.eq-box{
+  font-family:var(--mono);font-size:10.5px;color:var(--dim);line-height:2;
+  background:var(--ink);padding:10px 12px;border-radius:var(--r-sm);
+  border:1px solid rgba(255,255,255,0.06);
+}
+.eq-box span{color:var(--fg2)}
+
+/* ── MAIN ── */
+.main{padding:20px 24px;overflow-y:auto}
+
+/* regime */
+.rgm-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.rgm-badge{
+  font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:99px;border:1px solid;
+}
+.rgm-under{color:var(--aqua);border-color:rgba(56,217,176,.4);background:rgba(56,217,176,.08)}
+.rgm-crit{color:var(--amber);border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.08)}
+.rgm-over{color:var(--coral);border-color:rgba(232,107,95,.4);background:rgba(232,107,95,.08)}
+.rgm-info{font-family:var(--mono);font-size:10px;color:var(--dim2)}
+
+/* metrics */
+.mtr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:16px}
+.mtr{background:var(--ink2);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r);padding:11px 13px}
+.mtr.sky{border-color:rgba(91,156,246,.3);background:rgba(91,156,246,.05)}
+.mtr.grn{border-color:rgba(56,217,176,.3);background:rgba(56,217,176,.05)}
+.mtr.amb{border-color:rgba(245,166,35,.3);background:rgba(245,166,35,.05)}
+.mtr-lbl{font-family:var(--mono);font-size:10px;color:var(--dim2);margin-bottom:3px}
+.mtr-val{font-family:var(--mono);font-size:19px;font-weight:500;color:var(--fg)}
+.mtr-val.sky{color:var(--sky)}.mtr-val.grn{color:var(--aqua)}.mtr-val.amb{color:var(--amber)}
+.mtr-unit{font-size:10px;color:var(--dim2);margin-top:1px}
+
+/* tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:16px;overflow-x:auto}
+.tab{
+  padding:8px 16px;cursor:pointer;font-size:12px;color:var(--dim2);font-family:var(--head);font-weight:600;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap;
+}
+.tab:hover{color:var(--fg2)}
+.tab.on{color:var(--sky);border-bottom-color:var(--sky)}
+.tc{display:none}.tc.on{display:block}
+
+/* panels */
+.pnl{background:var(--ink2);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
+.pnl-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pnl-ttl{font-size:13px;font-weight:700;font-family:var(--head);color:var(--fg2)}
+.pnl-tag{font-family:var(--mono);font-size:9.5px;color:var(--dim2);background:var(--ink);padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.06)}
+
+canvas#simCanvas{width:100%;height:260px;border-radius:var(--r-sm);background:var(--ink);display:block}
+.chart-wrap{position:relative;width:100%}
+
+/* formula */
+.formula{
+  font-family:var(--mono);font-size:11px;color:var(--fg2);
+  background:var(--ink);border:1px solid rgba(255,255,255,0.07);
+  border-left:3px solid var(--sky);border-radius:0 var(--r-sm) var(--r-sm) 0;
+  padding:9px 13px;margin:10px 0;line-height:1.9;
+}
+
+/* table */
+.dtbl{width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--mono)}
+.dtbl th{text-align:left;padding:6px 9px;color:var(--dim2);font-weight:500;border-bottom:1px solid rgba(255,255,255,0.07);font-size:10.5px;letter-spacing:.03em}
+.dtbl td{padding:5px 9px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--dim)}
+.dtbl tr:hover td{background:rgba(255,255,255,0.02)}
+.td-hi{color:var(--sky) !important}.td-grn{color:var(--aqua) !important}.td-red{color:var(--coral) !important}
+
+/* comparison table */
+.ctbl{width:100%;border-collapse:collapse;font-size:11.5px}
+.ctbl th{padding:7px 11px;text-align:left;color:var(--dim2);border-bottom:1px solid rgba(255,255,255,0.07);font-weight:500;font-size:10.5px}
+.ctbl td{padding:7px 11px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:var(--mono);font-size:11px}
+
+/* fit result */
+.fit-box{
+  margin-top:11px;font-family:var(--mono);font-size:11px;color:var(--fg2);
+  background:var(--ink);padding:10px 13px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,0.07);
+  line-height:1.9;
+}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+
+@media(max-width:768px){
+  .wrap{grid-template-columns:1fr}
+  .sb{position:relative;top:0;max-height:none}
+  .mtr-grid{grid-template-columns:1fr 1fr}
+  .hdr{padding:12px 16px}
+  .main{padding:14px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">🕰️</div>
+  <div>
+    <div class="hdr-ttl">Bandul Fisis — Osilasi Teredam</div>
+    <div class="hdr-sub">Simulasi numerik RK4 · Udara · Air · Paralon · Analisis koefisien redaman</div>
+  </div>
+  <span class="hdr-pill">RK4 · Satu Massa</span>
+</header>
+
+<div class="wrap">
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<aside class="sb">
+
+  <div class="sb-sec">Medium redaman</div>
+  <div class="med-grid" id="medGrid"></div>
+  <div style="font-size:10px;color:var(--dim2);margin:6px 0 2px;font-family:var(--mono)" id="med-desc-label">—</div>
+
+  <div class="sb-sec">Geometri batang / bandul</div>
+  <div class="sl-grp">
+    <div class="sl-row"><span class="sl-name">Panjang batang (L)</span><span class="sl-val" id="lbl-L">0.40 m</span></div>
+    <input type="range" id="sl-L" min="0.10" max="1.50" step="0.01" value="0.40">
+    <div class="sl-hint">Panjang efektif dari pivot ke pusat massa</div>
+  </div>
+  <div class="sl-grp">
+    <div class="sl-row"><span class="sl-name">Massa (m)</span><span class="sl-val" id="lbl-m">0.20 kg</span></div>
+    <input type="range" id="sl-m" min="0.02" max="2.0" step="0.01" value="0.20">
+    <div class="sl-hint">Massa beban pada ujung bandul</div>
+  </div>
+  <div class="sl-grp">
+    <div class="sl-row"><span class="sl-name">Momen inersia (I)</span><span class="sl-val" id="lbl-I">0.032 kg·m²</span></div>
+    <input type="range" id="sl-I" min="0.001" max="0.5" step="0.001" value="0.032">
+    <div class="sl-hint">I = mL² untuk batang titik-ujung</div>
+  </div>
+
+  <div class="sb-sec">Kondisi awal & redaman</div>
+  <div class="sl-grp">
+    <div class="sl-row"><span class="sl-name">Sudut awal θ₀</span><span class="sl-val" id="lbl-th">15.0°</span></div>
+    <input type="range" id="sl-th" min="1" max="45" step="0.5" value="15">
+    <div class="sl-hint">Amplitudo sudut awal (°) — small angle valid &lt;20°</div>
+  </div>
+  <div class="sl-grp">
+    <div class="sl-row"><span class="sl-name">Koef. redaman (b)</span><span class="sl-val" id="lbl-b">0.008 Nm·s/rad</span></div>
+    <input type="range" id="sl-b" min="0" max="0.8" step="0.001" value="0.008">
+    <div class="sl-hint">Torsi redaman = b·(dθ/dt) · otomatis dari medium</div>
+  </div>
+  <div class="sl-grp">
+    <div class="sl-row"><span class="sl-name">Durasi simulasi</span><span class="sl-val" id="lbl-dur">20 s</span></div>
+    <input type="range" id="sl-dur" min="5" max="120" step="1" value="20">
+  </div>
+
+  <div class="sb-sec" style="margin-top:10px">Kendali</div>
+  <div class="btn-row">
+    <button class="btn pri" id="btn-play">▶ Mulai</button>
+    <button class="btn" id="btn-reset">↺ Reset</button>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="btn-env">Selubung on/off</button>
+    <button class="btn" id="btn-cmp">Tab Perbandingan</button>
+  </div>
+
+  <div class="sb-sec" style="margin-top:8px">Persamaan gerak</div>
+  <div class="eq-box">
+    <span>I·θ̈ + b·θ̇ + mgL·sin θ = 0</span><br>
+    small-angle: <span>θ̈ + (b/I)·θ̇ + (mgL/I)·θ = 0</span><br>
+    ω₀ = √(mgL/I)<br>
+    ζ = b / (2√(I·mgL))<br>
+    ωd = ω₀√(1−ζ²)<br>
+    <span>ln θ(t) = ln θ₀ − ζω₀·t</span>
+  </div>
+</aside>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main class="main">
+
+  <!-- regime + live info -->
+  <div class="rgm-row">
+    <span class="rgm-badge rgm-under" id="rgm-badge">underdamped</span>
+    <span class="rgm-info" id="rgm-formula">ζ = —</span>
+    <span class="rgm-info" id="rgm-med" style="color:var(--aqua)">● Udara</span>
+  </div>
+
+  <!-- metrics -->
+  <div class="mtr-grid">
+    <div class="mtr sky"><div class="mtr-lbl">ω₀ — frek. alami</div><div class="mtr-val sky" id="mv-w0">—</div><div class="mtr-unit">rad/s</div></div>
+    <div class="mtr sky"><div class="mtr-lbl">ζ — rasio redaman</div><div class="mtr-val sky" id="mv-z">—</div><div class="mtr-unit">—</div></div>
+    <div class="mtr grn"><div class="mtr-lbl">T — periode teredam</div><div class="mtr-val grn" id="mv-T">—</div><div class="mtr-unit">s</div></div>
+    <div class="mtr grn"><div class="mtr-lbl">ωd — frek. teredam</div><div class="mtr-val grn" id="mv-wd">—</div><div class="mtr-unit">rad/s</div></div>
+    <div class="mtr amb"><div class="mtr-lbl">τ — waktu peluruhan</div><div class="mtr-val amb" id="mv-tau">—</div><div class="mtr-unit">s</div></div>
+    <div class="mtr amb"><div class="mtr-lbl">f — frekuensi teredam</div><div class="mtr-val amb" id="mv-fd">—</div><div class="mtr-unit">Hz</div></div>
+    <div class="mtr"><div class="mtr-lbl">θ setelah 1τ</div><div class="mtr-val" id="mv-th1">—</div><div class="mtr-unit">derajat (≈36.8%θ₀)</div></div>
+    <div class="mtr"><div class="mtr-lbl">Energi awal</div><div class="mtr-val" id="mv-E0">—</div><div class="mtr-unit">mJ</div></div>
+  </div>
+
+  <!-- tabs -->
+  <div class="tabs">
+    <div class="tab on" data-tab="anim">Animasi</div>
+    <div class="tab" data-tab="theta">θ vs Waktu</div>
+    <div class="tab" data-tab="amp">Analisis Redaman</div>
+    <div class="tab" data-tab="energy">Energi</div>
+    <div class="tab" data-tab="table">Tabel Data</div>
+    <div class="tab" data-tab="cmp">Perbandingan Medium</div>
+  </div>
+
+  <!-- ── TAB: ANIMASI ── -->
+  <div class="tc on" id="tc-anim">
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Visualisasi bandul fisis — real-time</span>
+        <span class="pnl-tag" id="tag-t">t = 0.000 s</span>
+      </div>
+      <canvas id="simCanvas"></canvas>
+      <div style="display:flex;gap:18px;margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--dim2);flex-wrap:wrap">
+        <span id="live-th">θ = 0.000°</span>
+        <span id="live-w">ω = 0.000 rad/s</span>
+        <span id="live-E">E = 0.000 mJ</span>
+        <span style="margin-left:auto" id="live-med">● Udara</span>
+      </div>
+    </div>
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Diagram fase (ω vs θ)</span>
+        <span class="pnl-tag">spiral menuju titik asal</span>
+      </div>
+      <div class="chart-wrap" style="height:210px">
+        <canvas id="phaseCanvas" height="210"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: θ vs t ── -->
+  <div class="tc" id="tc-theta">
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Grafik sudut θ(t) terhadap waktu</span>
+        <span class="pnl-tag">numerik RK4</span>
+      </div>
+      <div class="formula">θ(t) = θ₀ · e<sup>−ζω₀t</sup> · cos(ωd·t) &nbsp;|&nbsp; selubung: ±θ₀·e<sup>−(b/2I)t</sup></div>
+      <div class="chart-wrap" style="height:270px">
+        <canvas id="thetaCanvas" height="270"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Amplitudo ── -->
+  <div class="tc" id="tc-amp">
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Penurunan amplitudo sudut (puncak-ke-puncak)</span>
+        <span class="pnl-tag">regresi ln θ vs t</span>
+      </div>
+      <div class="formula">ln θ(t) = ln θ₀ − (b/2I)·t &nbsp;→&nbsp; slope = −b/2I &nbsp;→&nbsp; <b>b = −2I × slope</b></div>
+      <div class="chart-wrap" style="height:250px">
+        <canvas id="ampCanvas" height="250"></canvas>
+      </div>
+      <div class="fit-box" id="fit-res">—</div>
+    </div>
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Log-linear: ln θ vs t (harus linier bila underdamped)</span>
+      </div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="logCanvas" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: ENERGI ── -->
+  <div class="tc" id="tc-energy">
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Energi kinetik rotasi, potensial, dan total</span>
+      </div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="energyCanvas" height="260"></canvas>
+      </div>
+    </div>
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Daya disipasi torsi redaman P = b·ω²</span>
+      </div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="powerCanvas" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: TABEL ── -->
+  <div class="tc" id="tc-table">
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Tabel data osilasi — metode manual</span>
+        <span class="pnl-tag" id="tbl-med-tag">Udara</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="dtbl">
+          <thead><tr>
+            <th>Osilasi ke-</th>
+            <th>t puncak (s)</th>
+            <th>θ puncak (°)</th>
+            <th>θ puncak (rad)</th>
+            <th>ln θ</th>
+            <th>Periode T (s)</th>
+            <th>Rasio θ_n/θ_(n-1)</th>
+            <th>Δθ (%)</th>
+          </tr></thead>
+          <tbody id="tblBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--ink);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r-sm);padding:11px 13px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--dim2);margin-bottom:6px">HASIL REGRESI</div>
+          <div id="reg-box" style="font-family:var(--mono);font-size:11px;color:var(--fg2);line-height:1.9">—</div>
+        </div>
+        <div style="background:var(--ink);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r-sm);padding:11px 13px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--dim2);margin-bottom:6px">METODE PENGUKURAN</div>
+          <div style="font-size:11.5px;color:var(--fg2);line-height:1.85">
+            <b>Manual:</b> rekam t setiap puncak dengan stopwatch, ukur sudut dengan busur.<br>
+            <b>Pengolahan citra:</b> tracking pixel bandul → konversi ke θ(t) → plot vs t → regresi ln θ → dapat b.<br>
+            <b>Bandingkan:</b> b manual vs b citra → hitung error relatif.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: PERBANDINGAN ── -->
+  <div class="tc" id="tc-cmp">
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-ttl">Overlay θ(t) ketiga medium (L=0.4m, m=0.2kg, θ₀=15°)</span>
+      </div>
+      <div class="chart-wrap" style="height:300px">
+        <canvas id="cmpCanvas" height="300"></canvas>
+      </div>
+      <div id="cmp-leg" style="display:flex;gap:16px;margin-top:10px;font-size:12px;font-family:var(--mono);flex-wrap:wrap"></div>
+    </div>
+    <div class="pnl">
+      <div class="pnl-hdr"><span class="pnl-ttl">Tabel sifat fisika medium & parameter teredam</span></div>
+      <div style="overflow-x:auto">
+        <table class="ctbl">
+          <thead><tr>
+            <th>Medium</th><th>Viskositas η</th><th>b (Nm·s/rad)</th>
+            <th>ζ</th><th>Regime</th><th>T (s)</th><th>τ (s)</th>
+            <th>f (Hz)</th><th>Osilasi ke 5%</th>
+          </tr></thead>
+          <tbody id="cmpTbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  MEDIA  (bandul fisis: b = torsi redaman Nm·s/rad)
+// ══════════════════════════════════════════════════
+const MEDIA = [
+  {
+    id:'air', name:'Udara', icon:'💨', color:'#a0c4ff',
+    eta: 1.81e-5, b: 0.008,
+    desc:'η ≈ 1.8×10⁻⁵ Pa·s — redaman aerodinamis sangat kecil',
+    fluid:false, fluidAlpha:0, waterColor:null, pipeColor:null
+  },
+  {
+    id:'water', name:'Air', icon:'💧', color:'#38bdf8',
+    eta: 1e-3, b: 0.12,
+    desc:'η ≈ 1.0×10⁻³ Pa·s — bandul terendam air',
+    fluid:true, fluidAlpha:0.30, waterColor:'#1e6fa8', pipeColor:null
+  },
+  {
+    id:'pipe', name:'Paralon', icon:'🔧', color:'#c8a96e',
+    eta: null, b: 0.35,
+    desc:'Peredam mekanik paralon PVC — gesekan viscous+struktural',
+    fluid:false, fluidAlpha:0, waterColor:null, pipeColor:'#b5855a'
+  }
+];
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let S = {
+  L:0.40, m:0.20, I:0.032, th0:15*Math.PI/180, b:0.008, dur:20,
+  medId:'air',
+  running:false, t:0, simTh:0, simW:0, dt:0.012,
+  showEnv:false, rafId:null
+};
+
+const charts = {};
+const phData = {th:[], w:[]};
+const g = 9.81;
+
+function getMed(){ return MEDIA.find(m=>m.id===S.medId); }
+function getB(){ return S.b; }
+function omega0(){ return Math.sqrt(S.m*g*S.L/S.I); }
+function zetaVal(bv){ bv=bv??getB(); return bv/(2*Math.sqrt(S.I*S.m*g*S.L)); }
+function omegaD(bv){ const z=zetaVal(bv),w=omega0(); return z<1?w*Math.sqrt(1-z*z):0; }
+function tauVal(bv){ bv=bv??getB(); return 2*S.I/bv; }
+function periodVal(bv){ const wd=omegaD(bv); return wd>0?2*Math.PI/wd:Infinity; }
+
+// RK4 for θ̈ = −(b/I)θ̇ − (mgL/I)sinθ  (full nonlinear)
+function rk4Step(th, w, dt_, bv){
+  bv=bv??getB();
+  const f=(t_,w_)=>-(bv/S.I)*w_ - (S.m*g*S.L/S.I)*Math.sin(t_);
+  const k1w=f(th,w),    k1t=w;
+  const k2w=f(th+.5*dt_*k1t,w+.5*dt_*k1w), k2t=w+.5*dt_*k1w;
+  const k3w=f(th+.5*dt_*k2t,w+.5*dt_*k2w), k3t=w+.5*dt_*k2w;
+  const k4w=f(th+dt_*k3t,   w+dt_*k3w),   k4t=w+dt_*k3w;
+  return {
+    th: th+(dt_/6)*(k1t+2*k2t+2*k3t+k4t),
+    w:  w +(dt_/6)*(k1w+2*k2w+2*k3w+k4w)
+  };
+}
+
+function genData(bv, dur, th0){
+  bv=bv??getB(); dur=dur??S.dur; th0=th0??S.th0;
+  const steps=Math.min(2000,Math.round(dur*80));
+  const ts=[],ths=[],ws=[],envP=[],envN=[];
+  let th=th0, w=0;
+  const dtSim=dur/steps;
+  const z=zetaVal(bv), w0=omega0();
+  for(let i=0;i<=steps;i++){
+    const ti=i*dtSim;
+    ts.push(+ti.toFixed(4));
+    ths.push(+th.toFixed(7));
+    ws.push(+w.toFixed(7));
+    const env=th0*Math.exp(-z*w0*ti);
+    envP.push(+env.toFixed(7)); envN.push(+(-env).toFixed(7));
+    ({th,w}=rk4Step(th,w,dtSim,bv));
+  }
+  return {ts,ths,ws,envP,envN};
+}
+
+function findPeaks(ts, ths){
+  const pt=[],pA=[],plnA=[];
+  for(let i=1;i<ths.length-1;i++){
+    if(ths[i]>ths[i-1]&&ths[i]>ths[i+1]&&ths[i]>1e-5){
+      pt.push(ts[i]); pA.push(ths[i]); plnA.push(Math.log(ths[i]));
+    }
+  }
+  return {ts:pt,As:pA,lnAs:plnA};
+}
+
+function linReg(xs,ys){
+  const n=xs.length; if(n<2) return{a:0,b:0,r2:0};
+  const mx=xs.reduce((a,v)=>a+v,0)/n, my=ys.reduce((a,v)=>a+v,0)/n;
+  const sxx=xs.reduce((a,v)=>a+(v-mx)*(v-mx),0);
+  const sxy=xs.reduce((a,v,i)=>a+(v-mx)*(ys[i]-my),0);
+  const b2=sxy/sxx, a2=my-b2*mx;
+  const sr=ys.reduce((a,v,i)=>a+(v-(a2+b2*xs[i]))**2,0);
+  const st=ys.reduce((a,v)=>a+(v-my)**2,0);
+  return{a:a2,b:b2,r2:st>0?1-sr/st:1};
+}
+
+// ══════════════════════════════════════════════════
+//  BUILD SIDEBAR
+// ══════════════════════════════════════════════════
+function buildMedGrid(){
+  const grid=document.getElementById('medGrid');
+  grid.innerHTML='';
+  MEDIA.forEach(med=>{
+    const d=document.createElement('div');
+    d.className='med-card'+(med.id===S.medId?' active':'');
+    d.innerHTML=`<span class="mi">${med.icon}</span><div class="mn">${med.name}</div><div class="mb">${med.b.toFixed(3)} Nm·s/rad</div>`;
+    d.addEventListener('click',()=>{
+      S.medId=med.id; S.b=med.b;
+      document.getElementById('sl-b').value=med.b;
+      document.getElementById('lbl-b').textContent=med.b.toFixed(3)+' Nm·s/rad';
+      document.querySelectorAll('.med-card').forEach(c=>c.classList.remove('active'));
+      d.classList.add('active');
+      document.getElementById('med-desc-label').textContent=med.desc;
+      document.getElementById('rgm-med').textContent='● '+med.name;
+      document.getElementById('rgm-med').style.color=med.color;
+      document.getElementById('live-med').textContent='● '+med.name;
+      document.getElementById('live-med').style.color=med.color;
+      document.getElementById('tbl-med-tag').textContent=med.name;
+      resetSim(); updateAll();
+    });
+    grid.appendChild(d);
+  });
+  const m=getMed();
+  document.getElementById('med-desc-label').textContent=m.desc;
+}
+
+// ══════════════════════════════════════════════════
+//  METRICS
+// ══════════════════════════════════════════════════
+function updateMetrics(){
+  const bv=getB();
+  const w0=omega0(),z=zetaVal(bv),wd=omegaD(bv),T=periodVal(bv),tc=tauVal(bv);
+  document.getElementById('lbl-L').textContent=S.L.toFixed(2)+' m';
+  document.getElementById('lbl-m').textContent=S.m.toFixed(2)+' kg';
+  document.getElementById('lbl-I').textContent=S.I.toFixed(3)+' kg·m²';
+  document.getElementById('lbl-th').textContent=(S.th0*180/Math.PI).toFixed(1)+'°';
+  document.getElementById('lbl-b').textContent=bv.toFixed(3)+' Nm·s/rad';
+  document.getElementById('lbl-dur').textContent=S.dur+' s';
+  document.getElementById('mv-w0').textContent=w0.toFixed(4);
+  document.getElementById('mv-z').textContent=z.toFixed(5);
+  document.getElementById('mv-wd').textContent=wd>0?wd.toFixed(4):'—';
+  document.getElementById('mv-T').textContent=isFinite(T)?T.toFixed(4):'∞';
+  document.getElementById('mv-tau').textContent=tc.toFixed(3);
+  document.getElementById('mv-fd').textContent=wd>0?(wd/(2*Math.PI)).toFixed(4):'—';
+  document.getElementById('mv-th1').textContent=((S.th0*Math.exp(-1))*180/Math.PI).toFixed(3)+'°';
+  const E0=0.5*S.I*omega0()*omega0()*S.th0*S.th0;
+  document.getElementById('mv-E0').textContent=(E0*1000).toFixed(3);
+  document.getElementById('rgm-formula').textContent=`ζ = ${z.toFixed(5)} | b = ${bv.toFixed(4)} Nm·s/rad`;
+  const badge=document.getElementById('rgm-badge');
+  if(z<0.999){badge.textContent='underdamped (teredam kurang)';badge.className='rgm-badge rgm-under';}
+  else if(z<1.001){badge.textContent='critically damped (redaman kritis)';badge.className='rgm-badge rgm-crit';}
+  else{badge.textContent='overdamped (teredam lebih)';badge.className='rgm-badge rgm-over';}
+}
+
+// ══════════════════════════════════════════════════
+//  CHART BASE
+// ══════════════════════════════════════════════════
+const gc={
+  grid:'rgba(255,255,255,0.06)',
+  txt:'rgba(255,255,255,0.38)',
+  sky:'#5b9cf6',aq:'#38d9b0',amb:'#f5a623',
+  cor:'#e86b5f',pipe:'#c8a96e',lm:'#9be37d',dim:'#8a96b0'
+};
+const baseOpts=(xl,yl)=>({
+  responsive:true,maintainAspectRatio:false,animation:false,
+  plugins:{
+    legend:{display:false},
+    tooltip:{mode:'index',intersect:false,backgroundColor:'#1e2736',
+      borderColor:'rgba(255,255,255,0.09)',borderWidth:1,
+      titleColor:'#e6ecf8',bodyColor:'#8a96b0',
+      titleFont:{family:'JetBrains Mono'},bodyFont:{family:'JetBrains Mono',size:11}}
+  },
+  scales:{
+    x:{type:'linear',title:{display:true,text:xl,color:gc.txt,font:{size:11,family:'JetBrains Mono'}},
+      ticks:{color:gc.txt,font:{size:10,family:'JetBrains Mono'}},grid:{color:gc.grid}},
+    y:{title:{display:true,text:yl,color:gc.txt,font:{size:11,family:'JetBrains Mono'}},
+      ticks:{color:gc.txt,font:{size:10,family:'JetBrains Mono'}},grid:{color:gc.grid}}
+  }
+});
+
+// ══════════════════════════════════════════════════
+//  BUILD ALL CHARTS
+// ══════════════════════════════════════════════════
+function buildAllCharts(){
+  const bv=getB();
+  const {ts,ths,ws,envP,envN}=genData(bv,S.dur,S.th0);
+  const peaks=findPeaks(ts,ths);
+  const fit=linReg(peaks.ts,peaks.lnAs);
+  buildThetaChart(ts,ths,envP,envN);
+  buildAmpChart(ts,peaks,fit,envP);
+  buildLogChart(peaks,fit);
+  buildEnergyChart(ts,ths,ws);
+  buildCmpChart();
+  buildTable(peaks,fit);
+  buildCmpTable();
+}
+
+function buildThetaChart(ts,ths,envP,envN){
+  const ctx=document.getElementById('thetaCanvas').getContext('2d');
+  if(charts.theta) charts.theta.destroy();
+  const med=getMed();
+  const thsDeg=ths.map(v=>v*180/Math.PI);
+  const eP=envP.map(v=>v*180/Math.PI);
+  const eN=envN.map(v=>v*180/Math.PI);
+  const ds=[
+    {label:'θ(t)',data:thsDeg.map((v,i)=>({x:ts[i],y:v})),borderColor:med.color,borderWidth:2,pointRadius:0,tension:0,fill:false}
+  ];
+  if(S.showEnv){
+    ds.push({label:'+θ env',data:eP.map((v,i)=>({x:ts[i],y:v})),borderColor:gc.amb,borderWidth:1,borderDash:[5,4],pointRadius:0,tension:0,fill:false});
+    ds.push({label:'−θ env',data:eN.map((v,i)=>({x:ts[i],y:v})),borderColor:gc.amb,borderWidth:1,borderDash:[5,4],pointRadius:0,tension:0,fill:false});
+  }
+  charts.theta=new Chart(ctx,{type:'line',data:{datasets:ds},options:baseOpts('Waktu (s)','Sudut θ (°)')});
+}
+
+function buildAmpChart(ts,peaks,fit,envP){
+  const ctx=document.getElementById('ampCanvas').getContext('2d');
+  if(charts.amp) charts.amp.destroy();
+  const fitLine=peaks.ts.map(ti=>Math.exp(fit.a+fit.b*ti));
+  charts.amp=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      {label:'selubung teoritis',data:ts.map((t,i)=>({x:t,y:envP[i]*180/Math.PI})),borderColor:gc.amb,borderWidth:1.2,borderDash:[4,3],pointRadius:0,showLine:true,tension:0,fill:false,type:'line'},
+      {label:'θ puncak',data:peaks.ts.map((t,i)=>({x:t,y:peaks.As[i]*180/Math.PI})),borderColor:gc.aq,backgroundColor:gc.aq,pointRadius:5.5,showLine:false},
+      {label:'regresi eksponensial',data:peaks.ts.map((t,i)=>({x:t,y:fitLine[i]*180/Math.PI})),borderColor:gc.cor,borderWidth:1.5,borderDash:[8,4],pointRadius:0,showLine:true,type:'line'}
+    ]},
+    options:baseOpts('Waktu (s)','Amplitudo θ (°)')
+  });
+  const bv=getB(),bEst=-2*S.I*fit.b;
+  document.getElementById('fit-res').innerHTML=
+    `slope regresi ln θ = <b>${fit.b.toFixed(6)}</b> s⁻¹ &nbsp;|&nbsp; R² = <b>${fit.r2.toFixed(5)}</b><br>`+
+    `b terukur = <b>${bEst.toFixed(5)} Nm·s/rad</b> &nbsp;vs&nbsp; b input = <b>${bv.toFixed(5)} Nm·s/rad</b><br>`+
+    `error relatif = <b>${bv>0?Math.abs((bEst-bv)/bv*100).toFixed(3):0}%</b> &nbsp;|&nbsp; ζ = <b>${zetaVal(bv).toFixed(6)}</b>`;
+}
+
+function buildLogChart(peaks,fit){
+  const ctx=document.getElementById('logCanvas').getContext('2d');
+  if(charts.log) charts.log.destroy();
+  const fitLn=peaks.ts.map(ti=>fit.a+fit.b*ti);
+  charts.log=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      {label:'ln θ puncak',data:peaks.ts.map((t,i)=>({x:t,y:peaks.lnAs[i]})),borderColor:'#c084fc',backgroundColor:'#c084fc',pointRadius:5,showLine:false},
+      {label:'fit linier',data:peaks.ts.map((t,i)=>({x:t,y:fitLn[i]})),borderColor:gc.amb,borderWidth:1.5,borderDash:[6,3],pointRadius:0,showLine:true,type:'line'}
+    ]},
+    options:baseOpts('Waktu (s)','ln θ (rad)')
+  });
+}
+
+function buildEnergyChart(ts,ths,ws){
+  const ctx=document.getElementById('energyCanvas').getContext('2d');
+  if(charts.energy) charts.energy.destroy();
+  const Ek=ws.map(w=>0.5*S.I*w*w);
+  const Ep=ths.map(th=>S.m*g*S.L*(1-Math.cos(th)));
+  const Et=Ek.map((e,i)=>e+Ep[i]);
+  charts.energy=new Chart(ctx,{
+    type:'line',
+    data:{datasets:[
+      {label:'Ek rotasi',data:Ek.map((v,i)=>({x:ts[i],y:v*1000})),borderColor:gc.sky,borderWidth:1.5,pointRadius:0,tension:0,fill:false},
+      {label:'Ep potensial',data:Ep.map((v,i)=>({x:ts[i],y:v*1000})),borderColor:gc.aq,borderWidth:1.5,pointRadius:0,tension:0,fill:false},
+      {label:'E total',data:Et.map((v,i)=>({x:ts[i],y:v*1000})),borderColor:gc.amb,borderWidth:2,borderDash:[4,3],pointRadius:0,tension:0,fill:false}
+    ]},
+    options:{...baseOpts('Waktu (s)','Energi (mJ)'),
+      plugins:{legend:{display:true,labels:{color:gc.txt,font:{size:11,family:'JetBrains Mono'},boxWidth:12}},tooltip:{mode:'index',intersect:false}}}
+  });
+  const bv=getB();
+  const Pd=ws.map(w=>bv*w*w);
+  const ctx2=document.getElementById('powerCanvas').getContext('2d');
+  if(charts.power) charts.power.destroy();
+  charts.power=new Chart(ctx2,{
+    type:'line',
+    data:{datasets:[{label:'P = b·ω²',data:Pd.map((v,i)=>({x:ts[i],y:v*1000})),borderColor:gc.cor,borderWidth:1.5,pointRadius:0,tension:0,fill:true,backgroundColor:'rgba(232,107,95,0.07)'}]},
+    options:baseOpts('Waktu (s)','Daya disipasi (mW)')
+  });
+}
+
+function buildCmpChart(){
+  const ctx=document.getElementById('cmpCanvas').getContext('2d');
+  if(charts.cmp) charts.cmp.destroy();
+  const ds=[];
+  const leg=document.getElementById('cmp-leg'); leg.innerHTML='';
+  MEDIA.forEach(med=>{
+    const {ts,ths}=genData(med.b,S.dur,S.th0);
+    ds.push({label:med.name,data:ths.map((v,i)=>({x:ts[i],y:v*180/Math.PI})),borderColor:med.color,borderWidth:2,pointRadius:0,tension:0,fill:false});
+    leg.innerHTML+=`<span style="display:flex;align-items:center;gap:6px;color:${med.color}">${med.icon} <span style="color:var(--dim2)">${med.name} (b=${med.b})</span></span>`;
+  });
+  charts.cmp=new Chart(ctx,{type:'line',data:{datasets:ds},options:{...baseOpts('Waktu (s)','θ (°)'),plugins:{legend:{display:false}}}});
+}
+
+function buildTable(peaks,fit){
+  const tbody=document.getElementById('tblBody'); tbody.innerHTML='';
+  for(let i=0;i<peaks.ts.length;i++){
+    const ratio=i>0?(peaks.As[i]/peaks.As[i-1]).toFixed(5):'—';
+    const delta=i>0?((peaks.As[i]-peaks.As[i-1])/peaks.As[i-1]*100).toFixed(2)+'%':'—';
+    const Ti=i>0?(peaks.ts[i]-peaks.ts[i-1]).toFixed(4):'—';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td>
+      <td class="td-hi">${peaks.ts[i].toFixed(4)}</td>
+      <td class="td-hi">${(peaks.As[i]*180/Math.PI).toFixed(4)}</td>
+      <td>${peaks.As[i].toFixed(6)}</td>
+      <td>${peaks.lnAs[i].toFixed(5)}</td>
+      <td>${Ti}</td>
+      <td>${ratio}</td>
+      <td class="${i>0?'td-red':''}">${delta}</td>`;
+    tbody.appendChild(tr);
+  }
+  const bv=getB(),bEst=-2*S.I*fit.b;
+  document.getElementById('reg-box').innerHTML=
+    `slope  = ${fit.b.toFixed(6)} s⁻¹\nintercept = ${fit.a.toFixed(5)}\nR²    = ${fit.r2.toFixed(6)}\nb terukur = ${bEst.toFixed(5)} Nm·s/rad\nb input   = ${bv.toFixed(5)} Nm·s/rad\nerror     = ${bv>0?Math.abs((bEst-bv)/bv*100).toFixed(4):0}%`;
+}
+
+function buildCmpTable(){
+  const tbody=document.getElementById('cmpTbl'); tbody.innerHTML='';
+  MEDIA.forEach(med=>{
+    const bv=med.b, z=zetaVal(bv), T=periodVal(bv), tc=tauVal(bv), wd=omegaD(bv);
+    let regime,cls;
+    if(z<0.999){regime='underdamped';cls='color:var(--aqua)'}
+    else if(z<1.001){regime='critical';cls='color:var(--amber)'}
+    else{regime='overdamped';cls='color:var(--coral)'}
+    const nOsc=T>0&&isFinite(T)?Math.ceil(-Math.log(0.05)/(bv/(2*S.I)*T)):'∞';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-weight:700;color:${med.color}">${med.icon} ${med.name}</td>
+      <td>${med.eta!==null?med.eta.toExponential(2):'N/A'}</td>
+      <td>${bv.toFixed(4)}</td>
+      <td>${z.toFixed(5)}</td>
+      <td style="${cls}">${regime}</td>
+      <td>${isFinite(T)?T.toFixed(4):'∞'}</td>
+      <td>${tc.toFixed(3)}</td>
+      <td>${wd>0?wd.toFixed(4):'—'}</td>
+      <td>${nOsc}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  DRAW PENDULUM
+// ══════════════════════════════════════════════════
+function drawPendulum(th, w){
+  const canvas=document.getElementById('simCanvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||700, H=260;
+  canvas.width=W; canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+
+  const med=getMed();
+  const pivX=W/2, pivY=32;
+  const scaleL=Math.min(H-60,W*0.36)/S.L;
+  const rodLen=S.L*scaleL;
+  const bobX=pivX+rodLen*Math.sin(th);
+  const bobY=pivY+rodLen*Math.cos(th);
+  const bobR=14;
+
+  // ── fluid fill (water only) ──
+  if(med.id==='water'){
+    const waterTop=pivY+rodLen*0.28;
+    const grad=ctx.createLinearGradient(0,waterTop,0,H);
+    grad.addColorStop(0,'rgba(30,111,168,0.35)');
+    grad.addColorStop(1,'rgba(10,50,90,0.55)');
+    ctx.fillStyle=grad; ctx.fillRect(0,waterTop,W,H-waterTop);
+    // surface shimmer
+    ctx.save(); ctx.globalAlpha=0.5;
+    ctx.strokeStyle='#7ee8fa'; ctx.lineWidth=1.2;
+    ctx.beginPath();
+    for(let xi=0;xi<W;xi+=18){ctx.moveTo(xi,waterTop);ctx.bezierCurveTo(xi+6,waterTop-2,xi+12,waterTop+2,xi+18,waterTop);}
+    ctx.stroke(); ctx.restore();
+    ctx.fillStyle='rgba(126,232,250,0.25)'; ctx.font='11px JetBrains Mono,monospace';
+    ctx.textAlign='right'; ctx.fillText('AIR (η≈1mPa·s)',W-10,waterTop+14);
+  }
+
+  // ── paralon damper box ──
+  if(med.id==='pipe'){
+    const bx=pivX-22, bw=44;
+    const wireTop=pivY+6, wireBot=pivY+rodLen*0.55;
+    // PVC tube
+    ctx.fillStyle='rgba(180,130,70,0.22)';
+    ctx.strokeStyle='#c8a96e'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(bx,wireTop,bw,wireBot-wireTop,5); ctx.fill(); ctx.stroke();
+    // inner shading
+    ctx.fillStyle='rgba(200,170,110,0.12)';
+    ctx.beginPath(); ctx.roundRect(bx+4,wireTop+4,bw-8,wireBot-wireTop-8,4); ctx.fill();
+    ctx.fillStyle='rgba(200,160,100,0.5)'; ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText('PARALON PVC',W-10,wireTop+15);
+    // friction indicator
+    if(Math.abs(w)>0.01){
+      ctx.fillStyle='rgba(240,150,60,0.7)'; ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='left';
+      ctx.fillText('〰 gesekan aktif',bx+bw+6,wireTop+(wireBot-wireTop)/2+4);
+    }
+  }
+
+  // ── ceiling ──
+  ctx.fillStyle='rgba(255,255,255,0.10)'; ctx.fillRect(0,0,W,14);
+  ctx.strokeStyle='rgba(255,255,255,0.22)'; ctx.lineWidth=0.8;
+  for(let i=0;i<W;i+=12){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+6,14);ctx.stroke();}
+
+  // ── pivot ──
+  ctx.beginPath();ctx.arc(pivX,pivY,6,0,Math.PI*2);
+  ctx.fillStyle='#8a96b0';ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // ── trail / ghost ──
+  ctx.save(); ctx.globalAlpha=0.12;
+  for(let gi=1;gi<=4;gi++){
+    const gt=S.t-gi*0.06;
+    if(gt<0)continue;
+    const gth=S.th0*Math.exp(-zetaVal()*omega0()*gt)*Math.cos(omegaD()*gt);
+    const gbx=pivX+rodLen*Math.sin(gth),gby=pivY+rodLen*Math.cos(gth);
+    ctx.strokeStyle=med.color; ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(pivX,pivY);ctx.lineTo(gbx,gby);ctx.stroke();
+    ctx.beginPath();ctx.arc(gbx,gby,bobR*(1-gi*0.15),0,Math.PI*2);ctx.fillStyle=med.color;ctx.fill();
+  }
+  ctx.restore();
+
+  // ── rod ──
+  ctx.beginPath();ctx.moveTo(pivX,pivY);ctx.lineTo(bobX,bobY);
+  ctx.strokeStyle='rgba(230,236,248,0.7)';ctx.lineWidth=2.5;ctx.stroke();
+
+  // ── bob ──
+  const grad2=ctx.createRadialGradient(bobX-3,bobY-3,2,bobX,bobY,bobR);
+  grad2.addColorStop(0,'#9cc8ff'); grad2.addColorStop(1,med.color);
+  ctx.beginPath();ctx.arc(bobX,bobY,bobR,0,Math.PI*2);
+  ctx.fillStyle=grad2;ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.5;ctx.stroke();
+  // mass label
+  ctx.fillStyle='#fff';ctx.font='bold 10px Syne,sans-serif';ctx.textAlign='center';
+  ctx.fillText('m',bobX,bobY+4);
+
+  // ── velocity arrow ──
+  if(Math.abs(w)>0.02){
+    const arrowLen=Math.min(35,Math.abs(w)*25);
+    const arrowDir=w>0?1:-1;
+    const ax=bobX+bobR+4, ay=bobY;
+    ctx.strokeStyle=gc.aq; ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax,ay+arrowLen*arrowDir);ctx.stroke();
+    ctx.fillStyle=gc.aq;
+    ctx.beginPath();ctx.moveTo(ax-5,ay+arrowLen*arrowDir-6*arrowDir);ctx.lineTo(ax+5,ay+arrowLen*arrowDir-6*arrowDir);ctx.lineTo(ax,ay+arrowLen*arrowDir);ctx.fill();
+    ctx.fillStyle=gc.aq;ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='left';
+    ctx.fillText(w.toFixed(2)+' rad/s',ax+8,ay+arrowLen*arrowDir/2+4);
+  }
+
+  // ── angle arc ──
+  if(Math.abs(th)>0.01){
+    ctx.save(); ctx.globalAlpha=0.4;
+    ctx.strokeStyle=gc.amb; ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(pivX,pivY,38,Math.PI/2-th,Math.PI/2,th>0);ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle=gc.amb;ctx.font='10px JetBrains Mono,monospace';ctx.textAlign=th>0?'left':'right';
+    ctx.fillText((th*180/Math.PI).toFixed(1)+'°',pivX+(th>0?42:-42),pivY+22);
+  }
+
+  // ── equilibrium line ──
+  ctx.setLineDash([4,5]); ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pivX,pivY);ctx.lineTo(pivX,pivY+rodLen+10);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── info ──
+  document.getElementById('tag-t').textContent='t = '+S.t.toFixed(3)+' s';
+  const thDeg=th*180/Math.PI;
+  document.getElementById('live-th').textContent='θ = '+thDeg.toFixed(3)+'°';
+  document.getElementById('live-w').textContent='ω = '+w.toFixed(4)+' rad/s';
+  const Ecur=(0.5*S.I*w*w+S.m*g*S.L*(1-Math.cos(th)))*1000;
+  document.getElementById('live-E').textContent='E = '+Ecur.toFixed(3)+' mJ';
+}
+
+// Phase chart
+function updatePhase(th,w){
+  phData.th.push(th*180/Math.PI); phData.w.push(w);
+  if(phData.th.length>600){phData.th.shift();phData.w.shift();}
+  if(!charts.phase){
+    const ctx=document.getElementById('phaseCanvas').getContext('2d');
+    charts.phase=new Chart(ctx,{
+      type:'scatter',
+      data:{datasets:[{label:'fase',data:[],borderColor:'#c084fc',backgroundColor:'#c084fc',pointRadius:1.5,showLine:true,tension:0}]},
+      options:{...baseOpts('θ (°)','ω (rad/s)'),animation:false}
+    });
+  }
+  charts.phase.data.datasets[0].data=phData.th.map((v,i)=>({x:v,y:phData.w[i]}));
+  charts.phase.update('none');
+}
+
+// ══════════════════════════════════════════════════
+//  ANIMATION LOOP
+// ══════════════════════════════════════════════════
+function animLoop(){
+  ({th:S.simTh,w:S.simW}=rk4Step(S.simTh,S.simW,S.dt));
+  S.t+=S.dt;
+  drawPendulum(S.simTh,S.simW);
+  updatePhase(S.simTh,S.simW);
+  if(S.t<S.dur&&S.running) S.rafId=requestAnimationFrame(animLoop);
+  else{S.running=false;document.getElementById('btn-play').textContent='▶ Mulai';}
+}
+
+function resetSim(){
+  S.running=false; cancelAnimationFrame(S.rafId);
+  S.t=0; S.simTh=S.th0; S.simW=0;
+  phData.th=[]; phData.w=[];
+  if(charts.phase) charts.phase.destroy(); delete charts.phase;
+  document.getElementById('btn-play').textContent='▶ Mulai';
+  drawPendulum(S.simTh,S.simW);
+}
+
+function updateAll(){updateMetrics();buildAllCharts();}
+
+// ══════════════════════════════════════════════════
+//  EVENTS
+// ══════════════════════════════════════════════════
+document.getElementById('btn-play').addEventListener('click',()=>{
+  if(!S.running){
+    if(S.t>=S.dur) resetSim();
+    S.running=true;
+    document.getElementById('btn-play').textContent='⏸ Pause';
+    S.rafId=requestAnimationFrame(animLoop);
+  } else {
+    S.running=false; cancelAnimationFrame(S.rafId);
+    document.getElementById('btn-play').textContent='▶ Lanjut';
+  }
+});
+
+document.getElementById('btn-reset').addEventListener('click',()=>{resetSim();updateAll();});
+document.getElementById('btn-env').addEventListener('click',function(){
+  S.showEnv=!S.showEnv;
+  this.textContent=S.showEnv?'Sembunyikan selubung':'Selubung on/off';
+  buildAllCharts();
+});
+document.getElementById('btn-cmp').addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tc').forEach(t=>t.classList.remove('on'));
+  document.querySelector('[data-tab="cmp"]').classList.add('on');
+  document.getElementById('tc-cmp').classList.add('on');
+  buildCmpChart(); buildCmpTable();
+});
+
+const SLIDERS=[
+  {id:'sl-L',key:'L',lbl:'lbl-L',unit:' m',dec:2},
+  {id:'sl-m',key:'m',lbl:'lbl-m',unit:' kg',dec:2},
+  {id:'sl-I',key:'I',lbl:'lbl-I',unit:' kg·m²',dec:3},
+  {id:'sl-th',key:'_th',lbl:'lbl-th',unit:'°',dec:1},
+  {id:'sl-b',key:'b',lbl:'lbl-b',unit:' Nm·s/rad',dec:3},
+  {id:'sl-dur',key:'dur',lbl:'lbl-dur',unit:' s',dec:0},
+];
+SLIDERS.forEach(({id,key,lbl,unit,dec})=>{
+  document.getElementById(id).addEventListener('input',e=>{
+    const v=+e.target.value;
+    if(key==='_th') S.th0=v*Math.PI/180; else S[key]=v;
+    document.getElementById(lbl).textContent=v.toFixed(dec)+unit;
+    if(S.running){S.running=false;cancelAnimationFrame(S.rafId);document.getElementById('btn-play').textContent='▶ Mulai';}
+    resetSim(); updateAll();
+  });
+});
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+    document.querySelectorAll('.tc').forEach(t=>t.classList.remove('on'));
+    tab.classList.add('on');
+    document.getElementById('tc-'+tab.dataset.tab).classList.add('on');
+    if(tab.dataset.tab==='cmp'){buildCmpChart();buildCmpTable();}
+  });
+});
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+buildMedGrid();
+S.simTh=S.th0; S.simW=0;
+updateAll();
+drawPendulum(S.simTh,S.simW);
+</script>
+</body>
+</html>
